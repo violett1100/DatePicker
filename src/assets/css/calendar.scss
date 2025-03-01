@@ -1,0 +1,55 @@
+.calendar {
+    width: 350px;
+    text-align: center;
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    .header {
+        height: 44px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        p {
+            font-weight: bold;
+        }
+        button {
+            width: 44px;
+            height: 44px;
+            background-color: #fff;
+            &:hover {
+                background-color: #e6e6e6;
+            }
+            .icon {
+                width: 16px;
+            }
+        }
+    }
+    .dates {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        button {
+            width: 50px;
+            height: 36px;
+            background-color: #fff;
+            &:hover {
+                background-color: #e6e6e6;
+            }
+            &.disabled {
+                color: #757575;
+                cursor: not-allowed;
+                &:hover {
+                    background-color: #fff;
+                }
+            }
+        }
+    }
+}
+
+#currentMonth .header button {
+    color: #757575;
+    cursor: not-allowed;
+    &:hover {
+        background-color: #fff;
+    }
+}
