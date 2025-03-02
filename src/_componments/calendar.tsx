@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import moment from 'moment'
 import clsx from 'clsx'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const currday = moment().format('YYYY-MM-DD')
-// const currday = moment('2025-01-05', 'YYYY-MM-DD').format('YYYY-MM-DD')
+// const currday = moment('2024-08-17', 'YYYY-MM-DD').format('YYYY-MM-DD')
 
-export function CalendarHead({ dates }: { dates: { year: string; month: string } }) {
+export function CalendarHead({ dates }: { dates: { year: number; month: number } }) {
     return (
         <div className="header">
             <button>
@@ -23,88 +23,138 @@ export function CalendarHead({ dates }: { dates: { year: string; month: string }
 }
 
 function buildCalendar(currday: string) {
-    const year = moment(currday, 'YYYY-MM-DD').format('YYYY')
-    const month = moment(currday, 'YYYY-MM-DD').format('MM')
-    const date = moment(currday, 'YYYY-MM-DD').format('YYYY-MM-DD')
-    const daysInMonth = moment(currday, 'YYYY-MM-DD').daysInMonth()
-    const currMonth = moment(currday, 'YYYY-MM-DD').format('MM')
+    const currMoment = moment(currday, 'YYYY-MM-DD')
+    const year = currMoment.year()
+    const month = currMoment.month() + 1 // 月份從 0 開始，所以 +1
+    const daysInMonth = currMoment.daysInMonth()
 
-    const firstItemMonth = moment(currday, 'YYYY-MM-DD').date(1).day(0).format('MM')
-    const firstItemDate = moment(currday, 'YYYY-MM-DD').date(1).day(0).day(0).format('DD')
-    const lastItemMonth = moment(currday, 'YYYY-MM-DD').date(daysInMonth).day(6).format('MM')
-    const lastItemDate = moment(currday, 'YYYY-MM-DD').date(daysInMonth).day(6).format('DD')
+    const firstDay = currMoment.clone().startOf('month').day() // 取得當月第一天是星期幾
+    const lastDay = currMoment.clone().endOf('month').day() // 取得當月最後一天是星期幾
 
-    let days = Array(daysInMonth)
-        .fill(null)
-        .map((e, i) => ({ day: (i + 1).toString(), state: 'default', seleted: false }))
+    // 當月主要日期
+    let days = Array.from({ length: daysInMonth }, (_, i) => {
+        const date = currMoment.clone().date(i + 1)
+        return {
+            date: date.format('YYYY-MM-DD'),
+            day: (i + 1).toString(),
+            state: date.isSame(moment(), 'day') ? 'today' : 'default',
+            selected: false,
+        }
+    })
 
-    if (firstItemMonth !== currMonth) {
-        const prevMonthDaysNum =
-            moment(moment(currday, 'YYYY-MM-DD').subtract(1, 'months'), 'MM').daysInMonth() - Number(firstItemDate) + 1
-        const prevMonthDays = Array(prevMonthDaysNum)
-            .fill(null)
-            .map((e, i) => ({ day: (Number(firstItemDate) + i).toString(), state: 'notCurrent', seleted: false }))
-        days = prevMonthDays.concat(days)
+    // 補前一個月的日期
+    if (firstDay !== 0) {
+        const prevMonthMoment = currMoment.clone().subtract(1, 'month')
+        const prevMonthDays = prevMonthMoment.daysInMonth()
+        const prevMonthDates = Array.from({ length: firstDay }, (_, i) => {
+            const date = prevMonthMoment.clone().date(prevMonthDays - firstDay + i + 1)
+            return {
+                date: date.format('YYYY-MM-DD'),
+                day: date.date().toString(),
+                state: 'other',
+                selected: false,
+            }
+        })
+        days = [...prevMonthDates, ...days]
     }
-    if (lastItemMonth !== currMonth) {
-        const nextMonthDaysNum = Number(lastItemDate)
-        const nextMonthDays = Array(nextMonthDaysNum)
-            .fill(null)
-            .map((e, i) => ({ day: (i + 1).toString(), state: 'notCurrent', seleted: false }))
-        days = days.concat(nextMonthDays)
+
+    // 補後一個月的日期
+    if (lastDay !== 6) {
+        const nextMonthMoment = currMoment.clone().add(1, 'month')
+        const nextMonthDates = Array.from({ length: 6 - lastDay }, (_, i) => {
+            const date = nextMonthMoment.clone().date(i + 1)
+            return {
+                date: date.format('YYYY-MM-DD'),
+                day: date.date().toString(),
+                state: 'other',
+                selected: false,
+            }
+        })
+        days = [...days, ...nextMonthDates]
     }
-    const build = { days, year, month, date }
-    return build
+    return { days, year, month }
 }
 
 export function CrossMonthCalendar() {
     const [calendar, setCalendar] = useState(buildCalendar(currday))
+    type selectedType = { firstDate: string; secondDate: string }
+    const selectDates: selectedType = { firstDate: '', secondDate: '' }
+    const [selected, setSelected] = useState(selectDates)
+    console.log(calendar)
+    const currYear = calendar.year
+    const currMonth = calendar.month
 
-    function prevMonth() {
-        // get month: 0-11
-        const currYear = moment(calendar.date, 'YYYY-MM-DD').get('year')
-        const currMonth = moment(calendar.date, 'YYYY-MM-DD').get('month')
-        if (currMonth == 0) {
-            const findDate = (Number(currYear) - 1).toString() + '-12-01'
-            setCalendar(buildCalendar(findDate))
-            console.log(findDate)
-        } else {
-            const findDate = currYear + '-' + currMonth.toString() + '-01'
-            console.log(findDate)
-            setCalendar(buildCalendar(findDate))
+    function changeMonth(direction: 'prev' | 'next') {
+        let newYear = currYear
+        let newMonth = currMonth + (direction === 'prev' ? -1 : 1)
+
+        if (newMonth === 0) {
+            newYear -= 1
+            newMonth = 12
+        } else if (newMonth === 13) {
+            newYear += 1
+            newMonth = 1
+        }
+
+        const findDate = `${newYear}-${String(newMonth).padStart(2, '0')}-01`
+        setCalendar(buildCalendar(findDate))
+    }
+
+    function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+        event.preventDefault()
+        const clickedValue = event.currentTarget.dataset.value
+        if (!clickedValue) return
+
+        const { firstDate, secondDate } = selected
+        // 如果 firstDate 還沒選擇，或者 secondDate 已經有值，則重新選擇 firstDate
+        if (!firstDate || secondDate) {
+            setSelected({ firstDate: clickedValue, secondDate: '' })
+            return
+        }
+        // 如果 clickedValue < firstDate，則當成新的 firstDate
+        if (clickedValue < firstDate) {
+            setSelected({ firstDate: clickedValue, secondDate: '' })
+            return
+        }
+        // 如果 secondDate 還沒選，並且 clickedValue >= firstDate，則當成 secondDate
+        if (!secondDate && clickedValue >= firstDate) {
+            setSelected({ ...selected, secondDate: clickedValue })
         }
     }
-    function nextMonth() {
-        // get month: 0-11
-        const currYear = moment(calendar.date, 'YYYY-MM-DD').get('year')
-        const currMonth = moment(calendar.date, 'YYYY-MM-DD').get('month')
-        if (currMonth == 11) {
-            const findDate = (Number(currYear) + 1).toString() + '-01-01'
-            setCalendar(buildCalendar(findDate))
-            console.log(findDate)
-        } else {
-            const findDate = currYear + '-' + (Number(currMonth) + 2).toString() + '-01'
-            console.log(findDate)
-            setCalendar(buildCalendar(findDate))
-        }
-    }
+
     return (
         <div id="crossMonth" className="calendar">
+            <p className="selectedText">
+                Selected Dates: {selected.firstDate} - {selected.secondDate}
+            </p>
             <div className="header">
-                <button onClick={prevMonth}>
+                <button
+                    onClick={() => {
+                        changeMonth('prev')
+                    }}
+                >
                     <ChevronLeft className="icon" />
                 </button>
                 <p>
                     {calendar.year} 年 {calendar.month} 月
                 </p>
-                <button onClick={nextMonth}>
+                <button
+                    onClick={() => {
+                        changeMonth('next')
+                    }}
+                >
                     <ChevronRight className="icon" />
                 </button>
             </div>
             <hr />
             <div className="dates">
                 {calendar.days.map((c, i) => (
-                    <button key={i} className="default">
+                    <button
+                        key={i}
+                        data-value={c.date}
+                        onClick={handleClick}
+                        className={clsx('default', { today: c.state == 'today' }, { active: c.seleted == true })}
+                    >
                         {c.day}
                     </button>
                 ))}
@@ -122,7 +172,15 @@ export function CurrentMonthCalendar() {
             <hr />
             <div className="dates">
                 {calendar.days.map((c, i) => (
-                    <button key={i} className={clsx('default', { disabled: c.state == 'notCurrent' })}>
+                    <button
+                        key={i}
+                        className={clsx(
+                            'default',
+                            { today: c.state == 'today' },
+                            { active: c.seleted == true },
+                            { disabled: c.state == 'other' }
+                        )}
+                    >
                         {c.day}
                     </button>
                 ))}

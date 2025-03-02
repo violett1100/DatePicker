@@ -45,6 +45,16 @@
 .calendar .dates button.disabled:hover {
   background-color: #fff;
 }
+.calendar .dates button.today {
+  background: #ffff76;
+}
+.calendar .dates button.active {
+  background-color: #006edc;
+}
+.calendar .selectedText {
+  text-align: left;
+  margin-bottom: 1rem;
+}
 
 #currentMonth .header button {
   color: #757575;

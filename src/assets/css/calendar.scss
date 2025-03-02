@@ -42,7 +42,17 @@
                     background-color: #fff;
                 }
             }
+            &.today {
+                background: #ffff76;
+            }
+            &.active {
+                background-color: #006edc;
+            }
         }
+    }
+    .selectedText {
+        text-align: left;
+        margin-bottom: 1rem;
     }
 }
 

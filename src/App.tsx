@@ -10,7 +10,7 @@ function App() {
                     <h4>
                         Date Range Component for <span style={{ color: 'purple' }}>current month</span>
                     </h4>
-                    <CurrentMonthCalendar />
+                    {/* <CurrentMonthCalendar /> */}
                 </div>
                 <div>
                     <h4>
