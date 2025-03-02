@@ -14,7 +14,7 @@ export function DatePickerHead(props: DatePickerHeadProps) {
                 <ChevronLeft className="icon" />
             </button>
             <p>
-                {dates.year} 年 {dates.month} 月
+                {dates.year} 年 {Number(dates.month)} 月
             </p>
             <button onClick={() => changeMonth?.('next')}>
                 <ChevronRight className="icon" />
