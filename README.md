@@ -15,8 +15,5 @@ npm run dev
 
 ```sh
 cd DatePicker
-npm run build
 npx serve dist
 ```
-
-_需要先執行安裝後才能瀏覽畫面_
